@@ -111,30 +111,46 @@
         ];
 
         function renderCards() {
-            log('Рендеринг карточек...');
-            const container = document.getElementById('cards-container');
-            container.innerHTML = '';
-            
-            gifts.forEach((gift, index) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.style.zIndex = gifts.length - index;
-                card.innerHTML = `
-                    <img src="${gift.image}" alt="${gift.name}">
-                    <div style="padding: 20px;">
-                        <h2 style="margin: 0 0 10px 0; font-size: 1.5em;">${gift.name}</h2>
-                        <p style="margin: 0; color: #666;">${gift.description}</p>
-                        <div style="position:absolute; bottom:20px; right:20px; font-weight:bold;">${gift.price}</div>
-                    </div>
-                `;
-                
-                const hammer = new Hammer(card);
-                hammer.on('pan', handlePan);
-                hammer.on('panend', handlePanEnd);
-                
-                container.appendChild(card);
-                log(`Добавлена карточка: ${gift.name}`);
-            });
+    log('Рендеринг карточек...');
+    const container = document.getElementById('cards-container');
+    container.innerHTML = '';
+    
+    if (gifts.length === 0) {
+        container.innerHTML = `
+            <div class="card" style="display: flex; align-items: center; justify-content: center; text-align: center;">
+                <div style="padding: 20px;">
+                    <h2>Подарки не найдены</h2>
+                    <p>Попробуйте выбрать другую категорию</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    gifts.forEach((gift, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.zIndex = gifts.length - index;
+        card.innerHTML = `
+            <img src="${gift.image}" alt="${gift.name}" onerror="this.src='https://via.placeholder.com/400x320/cccccc/ffffff?text=No+Image'">
+            <div style="padding: 20px;">
+                <h2 style="margin: 0 0 10px 0; font-size: 1.5em;">${gift.name}</h2>
+                <p style="margin: 0; color: #666;">${gift.description}</p>
+                <div style="position:absolute; bottom:20px; right:20px; font-weight:bold;">${gift.price}</div>
+                <a href="${gift.url}" target="_blank" style="position:absolute; bottom:20px; left:20px; 
+                   padding: 8px 16px; background: #2196F3; color: white; text-decoration: none; 
+                   border-radius: 20px;">Купить</a>
+            </div>
+        `;
+        
+        const hammer = new Hammer(card);
+        hammer.on('pan', handlePan);
+        hammer.on('panend', handlePanEnd);
+        
+        container.appendChild(card);
+        log(`Добавлена карточка: ${gift.name}`);
+    });
+}
         }
 
         function handlePan(event) {
