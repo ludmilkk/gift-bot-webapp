@@ -1,186 +1,236 @@
 <!DOCTYPE html>
-    <html lang="ru">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Gift Suggestions</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
-        <style>
-            body {
-                margin: 0;
-                padding: 20px;
-                font-family: Arial, sans-serif;
-                background-color: #f5f5f5;
-            }
-            .cards-container {
-                position: relative;
-                width: 100%;
-                max-width: 360px;
-                height: 480px;
-                margin: 0 auto;
-            }
-            .card {
-                position: absolute;
-                width: 100%;
-                height: 100%;
-                background: white;
-                border-radius: 15px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                cursor: grab;
-                transition: transform 0.3s;
-                overflow: hidden;
-            }
-            .card img {
-                width: 100%;
-                height: 60%;
-                object-fit: cover;
-            }
-            .card-content {
-                padding: 20px;
-            }
-            .card h2 {
-                margin: 0 0 10px 0;
-                font-size: 1.5em;
-                color: #333;
-            }
-            .card p {
-                margin: 0;
-                color: #666;
-            }
-            .card .price {
-                position: absolute;
-                bottom: 20px;
-                right: 20px;
-                font-weight: bold;
-                color: #2196F3;
-            }
-            .buttons {
-                position: fixed;
-                bottom: 20px;
-                left: 0;
-                right: 0;
-                display: flex;
-                justify-content: center;
-                gap: 20px;
-            }
-            .button {
-                width: 60px;
-                height: 60px;
-                border-radius: 50%;
-                border: none;
-                background: white;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .dislike {
-                color: #ff4444;
-            }
-            .like {
-                color: #4CAF50;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="cards-container" id="cards-container">
-            <!-- Cards will be added here dynamically -->
-        </div>
-        <div class="buttons">
-            <button class="button dislike" onclick="handleDislike()">✕</button>
-            <button class="button like" onclick="handleLike()">♥</button>
-        </div>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Suggestions</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-        <script>
-            let currentIndex = 0;
-            let gifts = [];
+        .debug-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            max-width: 360px;
+            width: 100%;
+        }
 
-            // Получаем данные от Telegram WebApp
-            window.Telegram.WebApp.ready();
-            const webAppData = window.Telegram.WebApp.initDataUnsafe;
+        .cards-container {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            height: 480px;
+            margin: 0 auto;
+        }
 
-            // Загружаем подарки из параметров
-            if (webAppData.start_param) {
-                gifts = JSON.parse(decodeURIComponent(webAppData.start_param));
-                renderCards();
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: grab;
+            transition: transform 0.3s;
+            overflow: hidden;
+        }
+
+        .card img {
+            width: 100%;
+            height: 60%;
+            object-fit: cover;
+            background-color: #e0e0e0;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        .card p {
+            margin: 0;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .dislike { color: #ff4444; }
+        .like { color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <div class="debug-info" id="debug-info">
+        Загрузка...
+    </div>
+
+    <div class="cards-container" id="cards-container">
+        <!-- Cards will be added here -->
+    </div>
+
+    <div class="buttons">
+        <button class="button dislike" onclick="handleDislike()">✕</button>
+        <button class="button like" onclick="handleLike()">♥</button>
+    </div>
+
+    <script>
+        // Тестовые данные
+        let gifts = [
+            {
+                name: "Тестовый подарок 1",
+                description: "Это тестовый подарок для проверки работы карточек",
+                price: "1990₽",
+                image: "/api/placeholder/400/320",
+                url: "https://www.ozon.ru"
+            },
+            {
+                name: "Тестовый подарок 2",
+                description: "Второй тестовый подарок для проверки свайпов",
+                price: "2990₽",
+                image: "/api/placeholder/400/320",
+                url: "https://www.ozon.ru"
+            }
+        ];
+
+        function updateDebugInfo(message) {
+            const debugElement = document.getElementById('debug-info');
+            debugElement.innerHTML += '<br>' + message;
+        }
+
+        function renderCards() {
+            updateDebugInfo('Начинаем рендеринг карточек...');
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            
+            if (gifts.length === 0) {
+                updateDebugInfo('Нет подарков для отображения');
+                return;
             }
 
-            function renderCards() {
-                const container = document.getElementById('cards-container');
-                container.innerHTML = '';
+            gifts.forEach((gift, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.zIndex = gifts.length - index;
+                card.innerHTML = `
+                    <img src="${gift.image}" alt="${gift.name}">
+                    <div class="card-content">
+                        <h2>${gift.name}</h2>
+                        <p>${gift.description}</p>
+                        <div style="position:absolute; bottom:20px; right:20px; font-weight:bold;">${gift.price}</div>
+                    </div>
+                `;
                 
-                gifts.forEach((gift, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.style.zIndex = gifts.length - index;
-                    card.innerHTML = `
-                        <img src="${gift.image}" alt="${gift.name}">
-                        <div class="card-content">
-                            <h2>${gift.name}</h2>
-                            <p>${gift.description}</p>
-                            <div class="price">${gift.price}</div>
-                        </div>
-                    `;
-                    
-                    // Добавляем свайп функционал
-                    const hammer = new Hammer(card);
-                    hammer.on('pan', handlePan);
-                    hammer.on('panend', handlePanEnd);
-                    
-                    container.appendChild(card);
-                });
-            }
+                const hammer = new Hammer(card);
+                hammer.on('pan', handlePan);
+                hammer.on('panend', handlePanEnd);
+                
+                container.appendChild(card);
+                updateDebugInfo(`Добавлена карточка: ${gift.name}`);
+            });
+        }
 
-            function handlePan(event) {
-                const card = event.target.closest('.card');
-                if (!card) return;
-                
-                const xPos = event.deltaX;
-                const rotate = xPos / 10;
-                
-                card.style.transform = `translateX(${xPos}px) rotate(${rotate}deg)`;
-            }
+        function handlePan(event) {
+            const card = event.target.closest('.card');
+            if (!card) return;
+            
+            const xPos = event.deltaX;
+            const rotate = xPos / 10;
+            
+            card.style.transform = `translateX(${xPos}px) rotate(${rotate}deg)`;
+        }
 
-            function handlePanEnd(event) {
-                const card = event.target.closest('.card');
-                if (!card) return;
-                
-                const xPos = event.deltaX;
-                if (Math.abs(xPos) > 100) {
-                    // Свайп достаточно сильный
-                    if (xPos > 0) {
-                        handleLike();
+        function handlePanEnd(event) {
+            const card = event.target.closest('.card');
+            if (!card) return;
+            
+            const xPos = event.deltaX;
+            if (Math.abs(xPos) > 100) {
+                if (xPos > 0) {
+                    handleLike();
+                } else {
+                    handleDislike();
+                }
+            } else {
+                card.style.transform = '';
+            }
+        }
+
+        function handleLike() {
+            const card = document.querySelector('.card');
+            if (!card) return;
+            card.style.transform = 'translateX(200%) rotate(20deg)';
+            setTimeout(() => card.remove(), 300);
+        }
+
+        function handleDislike() {
+            const card = document.querySelector('.card');
+            if (!card) return;
+            card.style.transform = 'translateX(-200%) rotate(-20deg)';
+            setTimeout(() => card.remove(), 300);
+        }
+
+        // Инициализация
+        window.addEventListener('DOMContentLoaded', () => {
+            updateDebugInfo('Страница загружена');
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.ready();
+                    const webAppData = window.Telegram.WebApp.initDataUnsafe;
+                    updateDebugInfo('Telegram WebApp инициализирован');
+                    if (webAppData.start_param) {
+                        gifts = JSON.parse(decodeURIComponent(webAppData.start_param));
+                        updateDebugInfo('Получены данные из Telegram');
                     } else {
-                        handleDislike();
+                        updateDebugInfo('Используем тестовые данные');
                     }
                 } else {
-                    // Возвращаем карточку на место
-                    card.style.transform = '';
+                    updateDebugInfo('Telegram WebApp не найден, используем тестовые данные');
                 }
+            } catch (error) {
+                updateDebugInfo('Ошибка: ' + error.message);
             }
-
-            function handleLike() {
-                const card = document.querySelector('.card');
-                if (!card) return;
-                
-                card.style.transform = 'translateX(200%) rotate(20deg)';
-                setTimeout(() => {
-                    card.remove();
-                    currentIndex++;
-                }, 300);
-            }
-
-            function handleDislike() {
-                const card = document.querySelector('.card');
-                if (!card) return;
-                
-                card.style.transform = 'translateX(-200%) rotate(-20deg)';
-                setTimeout(() => {
-                    card.remove();
-                    currentIndex++;
-                }, 300);
-            }
-        </script>
-    </body>
-    </html>
+            
+            renderCards();
+        });
+    </script>
+</body>
+</html>
