@@ -171,39 +171,24 @@
             setTimeout(() => card.remove(), 300);
         }
 
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', () => {
-            log('Страница загружена');
-            
-            // Проверяем Telegram WebApp
-            if (window.Telegram?.WebApp) {
-                log('Telegram WebApp найден');
-                try {
-                    window.Telegram.WebApp.ready();
-                    log('Telegram WebApp готов');
-                    
-                    const webAppData = window.Telegram.WebApp.initData;
-                    log('Init data: ' + webAppData);
-                    
-                    // Если есть данные от бота, используем их
-                    if (webAppData) {
-                        try {
-                            const parsedData = JSON.parse(decodeURIComponent(webAppData));
-                            gifts = parsedData;
-                            log('Получены данные от бота');
-                        } catch (e) {
-                            log('Ошибка парсинга данных: ' + e.message);
-                        }
-                    }
-                } catch (e) {
-                    log('Ошибка инициализации WebApp: ' + e.message);
-                }
-            } else {
-                log('Telegram WebApp не найден, используем тестовые данные');
-            }
-            
-            renderCards();
-        });
+document.addEventListener('DOMContentLoaded', () => {
+    log('Страница загружена');
+    
+    // Пытаемся получить данные из хэша URL
+    try {
+        const hashData = window.location.hash.substring(6); // Пропускаем '#data='
+        if (hashData) {
+            gifts = JSON.parse(decodeURIComponent(hashData));
+            log('Получены данные из URL');
+        } else {
+            log('Данные в URL не найдены, используем тестовые данные');
+        }
+    } catch (e) {
+        log('Ошибка получения данных: ' + e.message);
+    }
+    
+    renderCards();
+});
     </script>
 </body>
 </html>
