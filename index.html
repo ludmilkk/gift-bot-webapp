@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gift Suggestions</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+            }
+            .cards-container {
+                position: relative;
+                width: 100%;
+                max-width: 360px;
+                height: 480px;
+                margin: 0 auto;
+            }
+            .card {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                cursor: grab;
+                transition: transform 0.3s;
+                overflow: hidden;
+            }
+            .card img {
+                width: 100%;
+                height: 60%;
+                object-fit: cover;
+            }
+            .card-content {
+                padding: 20px;
+            }
+            .card h2 {
+                margin: 0 0 10px 0;
+                font-size: 1.5em;
+                color: #333;
+            }
+            .card p {
+                margin: 0;
+                color: #666;
+            }
+            .card .price {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                font-weight: bold;
+                color: #2196F3;
+            }
+            .buttons {
+                position: fixed;
+                bottom: 20px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+            }
+            .button {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                border: none;
+                background: white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .dislike {
+                color: #ff4444;
+            }
+            .like {
+                color: #4CAF50;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="cards-container" id="cards-container">
+            <!-- Cards will be added here dynamically -->
+        </div>
+        <div class="buttons">
+            <button class="button dislike" onclick="handleDislike()">✕</button>
+            <button class="button like" onclick="handleLike()">♥</button>
+        </div>
+
+        <script>
+            let currentIndex = 0;
+            let gifts = [];
+
+            // Получаем данные от Telegram WebApp
+            window.Telegram.WebApp.ready();
+            const webAppData = window.Telegram.WebApp.initDataUnsafe;
+
+            // Загружаем подарки из параметров
+            if (webAppData.start_param) {
+                gifts = JSON.parse(decodeURIComponent(webAppData.start_param));
+                renderCards();
+            }
+
+            function renderCards() {
+                const container = document.getElementById('cards-container');
+                container.innerHTML = '';
+                
+                gifts.forEach((gift, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.style.zIndex = gifts.length - index;
+                    card.innerHTML = `
+                        <img src="${gift.image}" alt="${gift.name}">
+                        <div class="card-content">
+                            <h2>${gift.name}</h2>
+                            <p>${gift.description}</p>
+                            <div class="price">${gift.price}</div>
+                        </div>
+                    `;
+                    
+                    // Добавляем свайп функционал
+                    const hammer = new Hammer(card);
+                    hammer.on('pan', handlePan);
+                    hammer.on('panend', handlePanEnd);
+                    
+                    container.appendChild(card);
+                });
+            }
+
+            function handlePan(event) {
+                const card = event.target.closest('.card');
+                if (!card) return;
+                
+                const xPos = event.deltaX;
+                const rotate = xPos / 10;
+                
+                card.style.transform = `translateX(${xPos}px) rotate(${rotate}deg)`;
+            }
+
+            function handlePanEnd(event) {
+                const card = event.target.closest('.card');
+                if (!card) return;
+                
+                const xPos = event.deltaX;
+                if (Math.abs(xPos) > 100) {
+                    // Свайп достаточно сильный
+                    if (xPos > 0) {
+                        handleLike();
+                    } else {
+                        handleDislike();
+                    }
+                } else {
+                    // Возвращаем карточку на место
+                    card.style.transform = '';
+                }
+            }
+
+            function handleLike() {
+                const card = document.querySelector('.card');
+                if (!card) return;
+                
+                card.style.transform = 'translateX(200%) rotate(20deg)';
+                setTimeout(() => {
+                    card.remove();
+                    currentIndex++;
+                }, 300);
+            }
+
+            function handleDislike() {
+                const card = document.querySelector('.card');
+                if (!card) return;
+                
+                card.style.transform = 'translateX(-200%) rotate(-20deg)';
+                setTimeout(() => {
+                    card.remove();
+                    currentIndex++;
+                }, 300);
+            }
+        </script>
+    </body>
+    </html>
